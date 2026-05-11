@@ -4,7 +4,7 @@ Este projeto é uma ferramenta interativa para visualização e exportação de 
 
 ## 🚀 Link do Projeto
 Para uma melhor experiência, acesse o sistema em uma nova aba: 
-<a href="https://julianasodata.github.io/mapa-comercial-floresta-pr/" target="_blank" rel="noopener noreferrer">Acessar Mapa Comercial Interativo</a>
+[Acessar Mapa Comercial Interativo](https://julianasodata.github.io/mapa-comercial-floresta-pr/)
 
 ## ✨ Funcionalidades
 - **Mapa Interativo:** Visualização de pontos comerciais utilizando Leaflet.js e OpenStreetMap.
@@ -23,7 +23,7 @@ Para uma melhor experiência, acesse o sistema em uma nova aba:
 2. Abra o arquivo `index.html` em qualquer navegador moderno.
 
 ---
-Desenvolvido por **Juliana Santos** | <a href="www.linkedin.com/in/julianasodata" target="_blank" rel="noopener noreferrer">Conectar no LinkedIn</a>
+Desenvolvido por **Juliana Santos** | <a href="https://www.linkedin.com/in/julianasodata" target="_blank" rel="noopener noreferrer">Conectar no LinkedIn</a>
 
 ## 📸 Demonstração
 ![Interface do Sistema](assets/Print_Comercio_Floresta.png)
