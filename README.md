@@ -23,3 +23,6 @@ Você pode acessar o projeto online aqui: https://julianasodata.github.io/mapa-c
 
 ---
 Desenvolvido por Juliana Santos - www.linkedin.com/in/julianasodata
+
+## 📸 Demonstração
+![Interface do Sistema](assets/Print_Comercio_Floresta.png)
