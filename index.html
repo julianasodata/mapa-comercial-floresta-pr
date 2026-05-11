@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Comércios Floresta PR</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  /* Nova Paleta Modern Blue - Clara e Profissional */
+  --bg: #f8fafc;           
+  --surface: #ffffff;      
+  --surface2: #f1f5f9;     
+  --border: #e2e8f0;       
+  --border2: #cbd5e1;      
+  --accent: #2563eb;       
+  --accent2: #4f46e5;     
+  --accent3: #0891b2;
+  --text: #1e293b;
+  --muted: #64748b;
+  --muted2: #475569;
+  --ok: #10b981;
+  --tab-h: 52px;
+  --header-h: 64px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+
+header{
+  height:var(--header-h);display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border);
+  position:relative;z-index:200;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand img { height: 32px; width: auto; vertical-align: middle; margin-right: 10px; }
+.brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:-.02em;}
+.brand-name em{color:var(--accent);font-style:normal;}
+.header-right{display:flex;align-items:center;gap:20px;}
+.update-badge{
+  display:flex;align-items:center;gap:7px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:6px;padding:5px 12px;font-size:.78rem;
+}
+.update-badge .label{color:var(--muted2);}
+.update-badge .date{font-family:'DM Mono',monospace;color:var(--accent2);font-weight:500;}
+.status-chip{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted2);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:blink 2s infinite;}
+.dot.loading{background:var(--accent);}
+.dot.error{background:#f85149;animation:none;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.tabs{
+  height:var(--tab-h);display:flex;align-items:stretch;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;gap:2px;flex-shrink:0;
+}
+.tab{
+  display:flex;align-items:center;gap:8px;padding:0 18px;
+  font-size:.84rem;font-weight:500;cursor:pointer;
+  border-bottom:2px solid transparent;color:var(--muted2);
+  transition:all .18s;user-select:none;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.app-body{
+  height:calc(100vh - var(--header-h) - var(--tab-h) - 30px);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel{display:none;flex:1;overflow:hidden;}
+.panel.active{display:flex;}
+
+.sidebar{
+  width:290px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-top{padding:14px 18px 10px;border-bottom:1px solid var(--border);}
+.sidebar-top h3{
+  font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;
+}
+.count-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(37, 99, 235, 0.1);color:var(--accent);
+  font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:6px;
+}
+.search{position:relative;}
+.search input{
+  width:100%;padding:7px 10px 7px 32px;
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;outline:none;
+  transition:border-color .2s;
+}
+.search input:focus{border-color:var(--accent);}
+.search::before{content:'⌕';position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;}
+
+.filter-bar{padding:8px 18px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{
+  padding:3px 10px;border-radius:20px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted2);font-size:.72rem;cursor:pointer;
+  font-family:'Inter',sans-serif;transition:all .15s;
+}
+.filter-btn:hover{border-color:var(--accent3);color:var(--accent3);}
+.filter-btn.active{background:rgba(8, 145, 178, 0.15);border-color:var(--accent3);color:var(--accent3);}
+
+.list{flex:1;overflow-y:auto;padding:6px 0;}
+.list-item{
+  padding:10px 18px;cursor:pointer;
+  border-left:3px solid transparent;transition:all .13s;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.list-item:hover{background:rgba(37, 99, 235, 0.04);border-left-color:var(--border2);}
+.list-item.active{background:rgba(37, 99, 235, 0.08);border-left-color:var(--accent);}
+.list-num{
+  min-width:22px;height:22px;border-radius:50%;
+  background:var(--border2);color:var(--muted2);
+  font-size:.68rem;font-weight:700;font-family:'DM Mono',monospace;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
+}
+.list-item.active .list-num{background:var(--accent);color:#fff;}
+.list-info .addr{font-size:.82rem;font-weight:500;line-height:1.35;}
+.list-info .bairro{font-size:.72rem;color:var(--muted2);margin-top:2px;}
+
+.sidebar-bottom{padding:10px 18px;border-top:1px solid var(--border);}
+.btn{
+  width:100%;padding:7px 12px;border-radius:6px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted2);font-family:'Inter',sans-serif;font-size:.78rem;
+  cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.map-wrap{flex:1;position:relative;}
+#map-geral{width:100%;height:100%;}
+.popup-addr{font-family:'Syne',sans-serif;font-weight:600;font-size:.92rem;margin-bottom:3px;}
+.popup-bairro{font-size:.78rem;color:var(--muted2);}
+.popup-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:var(--accent);
+  color:#fff;font-size:.68rem;font-weight:800;margin-bottom:6px;
+}
+
+#panel-bairros{flex-direction:column;}
+.bairro-toolbar{
+  padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;
+}
+.bairro-toolbar label{font-size:.8rem;color:var(--muted2);font-weight:500;}
+select#bairroSelect{
+  padding:6px 10px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;outline:none;cursor:pointer;
+  min-width:200px;
+}
+.btn-all-pdf{
+  padding:6px 14px;border-radius:6px;
+  background:rgba(37, 99, 235, 0.1);border:1px solid var(--accent);
+  color:var(--accent);font-size:.78rem;font-family:'Inter',sans-serif;cursor:pointer;
+  transition:all .18s;
+}
+.bairros-scroll{flex:1;overflow-y:auto;padding:20px;}
+
+.grupo-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  margin-bottom:28px;overflow:hidden;
+}
+.grupo-header{
+  padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.grupo-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;}
+.grupo-meta{font-size:.75rem;color:var(--muted2);margin-top:2px;}
+.btn-pdf{
+  padding:5px 14px;border-radius:6px;
+  background:rgba(37, 99, 235, 0.1);border:1px solid var(--accent);
+  color:var(--accent);font-size:.75rem;font-family:'Inter',sans-serif;cursor:pointer;
+  display:flex;align-items:center;gap:5px;transition:all .18s;white-space:nowrap;
+}
+.grupo-map{height:320px;width:100%;}
+table.endtable{width:100%;border-collapse:collapse;font-size:.8rem;}
+table.endtable th{
+  padding:8px 14px;text-align:left;
+  font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  background:var(--surface2);border-bottom:1px solid var(--border);
+}
+table.endtable td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text);}
+
+.loading-overlay{
+  position:absolute;inset:0;background:rgba(10,14,20,.75);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;z-index:999;backdrop-filter:blur(4px);
+}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-overlay p{font-size:.85rem;color:var(--muted2);}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:.85rem;}
+
+footer {
+  height: 30px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+}
+
+@media (max-width: 768px) {
+  html, body { overflow: auto !important; height: auto; }
+  header { height: auto; flex-direction: column; padding: 10px; gap: 10px; }
+  .app-body { height: auto; overflow: visible; }
+  .panel { display: none !important; }
+  .panel.active { display: flex !important; flex-direction: column; min-height: 800px; }
+  .sidebar { width: 100%; height: 450px; border-right: none; border-bottom: 1px solid var(--border); }
+  .sidebar.hidden { display: none; }
+  .map-wrap { height: 450px; width: 100%; flex: none; }
+  .toggle-sidebar {
+    display: block !important;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+}
+.toggle-sidebar { display: none; }
+</style>
+</head>
+<body>
+
+<button class="toggle-sidebar" onclick="toggleMobileSidebar()">
+  ☰
+</button>
+
+<script>
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  sidebar.classList.toggle('hidden');
+  setTimeout(() => {
+    if (typeof mapGeral !== 'undefined' && mapGeral) {
+      mapGeral.invalidateSize();
+    }
+  }, 300);
+}
+</script>
+    
+<header>
+  <div class="brand">
+    <div class="brand-name">Comércios <em>Floresta</em> PR</div>
+  </div>
+  <div class="header-right">
+    <div class="update-badge">
+      <span class="label">Último registro:</span>
+      <span class="date" id="updateDate">—</span>
+    </div>
+    <div class="status-chip">
+      <div class="dot loading" id="statusDot"></div>
+      <span id="statusText">Carregando…</span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" id="tab-geral" onclick="switchTab('geral')">
+    🗺️ &nbsp;Visão Geral
+  </div>
+  <div class="tab" id="tab-bairros" onclick="switchTab('bairros')">
+    🏘️ &nbsp;Por Bairro / PDF
+  </div>
+</div>
+
+<div class="app-body">
+
+  <div class="panel active" id="panel-geral">
+    <div class="sidebar">
+      <div class="sidebar-top">
+        <h3>Endereços <span class="count-pill" id="countGeral">0</span></h3>
+        <div class="search">
+          <input type="text" id="searchGeral" placeholder="Buscar endereço ou bairro…" oninput="filtrarGeral()"/>
+        </div>
+      </div>
+      <div class="filter-bar" id="filterBar"></div>
+      <div class="list" id="listaGeral"></div>
+      <div class="sidebar-bottom">
+        <button class="btn" onclick="carregarDados()">↻ Atualizar planilha</button>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <div id="map-geral"></div>
+      <div class="loading-overlay" id="loadingGeral">
+        <div class="spinner"></div>
+        <p>Carregando endereços…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-bairros">
+      <div class="bairro-toolbar">
+        <label>Filtrar bairro:</label>
+        <select id="bairroSelect" onchange="renderBairros()">
+          <option value="">Todos os bairros</option>
+        </select>
+        <div class="spacer"></div>
+        <button class="btn-all-pdf" onclick="baixarTodosPDFs()">⬇ Baixar todos os PDFs</button>
+      </div>
+      <div class="bairros-scroll" id="bairrosScroll">
+        <div class="empty">Carregando dados…</div>
+      </div>
+    </div>
+
+</div>
+
+<footer>
+  Versão 1.0
+</footer>
+
+<script>
+const SHEET_ID = '1k5wdMKhvl5Klz_dX5iKmR5_n2uJlrqXy3bPrhA3rQYg';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+
+let todosEnderecos = [];
+let mapGeral = null;
+let marcadoresGeral = [];
+let mapsBairro = {};
+let activeIdx = null;
+let dataAtualizacao = '—';
+
+function setStatus(tipo, msg) {
+  document.getElementById('statusDot').className = 'dot ' + tipo;
+  document.getElementById('statusText').textContent = msg;
+}
+
+function parseBr(v) {
+  if (!v) return null;
+  const n = parseFloat(v.toString().replace(/\s/g,'').replace(',','.'));
+  return isNaN(n) ? null : n;
+}
+
+function csvParse(text) {
+  return text.trim().split('\n').map(linha => {
+    const cols = []; let inside = false, cur = '';
+    for (const c of linha) {
+      if (c === '"') { inside = !inside; }
+      else if (c === ',' && !inside) { cols.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function pinIcon(num, color='#2563eb') {
+  return L.divIcon({
+    className:'',
+    html:`<svg width="30" height="42" viewBox="0 0 30 42" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="15" cy="40" rx="6" ry="2" fill="rgba(0,0,0,0.35)"/>
+      <path d="M15 0C7.82 0 2 5.82 2 13c0 10 13 27 13 27s13-17 13-27C28 5.82 22.18 0 15 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="15" cy="13" r="7" fill="#fff" fill-opacity=".92"/>
+      <text x="15" y="17" text-anchor="middle" fill="${color}" font-size="8" font-weight="800" font-family="monospace">${num}</text>
+    </svg>`,
+    iconSize:[30,42], iconAnchor:[15,42], popupAnchor:[0,-42]
+  });
+}
+
+function darkTiles(map) {
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+}
+
+async function carregarDados() {
+  setStatus('loading','Carregando…');
+  document.getElementById('loadingGeral').style.display='flex';
+  try {
+    const url = CSV_URL + '&t=' + Date.now();
+    let csv;
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(r.status);
+      csv = await r.text();
+    } catch {
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      if (!r2.ok) throw new Error(r2.status);
+      csv = await r2.text();
+    }
+
+    const linhas = csvParse(csv);
+
+    for (let i = linhas.length - 1; i >= 0; i--) {
+        const val = (linhas[i][5] || '').trim();
+        if (val && val.match(/\d{2}[\/\-]\d{2}/)) {
+            dataAtualizacao = val;
+            document.getElementById('updateDate').textContent = val;
+            break; 
+        }
+    }
+
+    const dados = linhas.slice(1).map((c, i) => ({
+      _idx: i,
+      endereco: (c[0] || '').replace(/"/g, ''),
+      bairro: (c[1] || '').replace(/"/g, ''),
+      esquina: (c[6] || '').replace(/"/g, ''), 
+      lat: parseBr(c[3]),
+      lng: parseBr(c[4]),
+    })).filter(d => d.endereco && d.lat && d.lng);
+
+    todosEnderecos = dados;
+    setStatus('ok', `${dados.length} endereços`);
+    document.getElementById('loadingGeral').style.display='none';
+
+    renderGeralLista(dados);
+    renderGeralMarcadores(dados);
+    popularFiltros(dados);
+    popularSelectBairro(dados);
+
+  } catch(e) {
+    setStatus('error','Erro ao carregar');
+    document.getElementById('loadingGeral').style.display='none';
+    console.error(e);
+  }
+}
+
+function renderGeralLista(dados) {
+  document.getElementById('countGeral').textContent = dados.length;
+  const lista = document.getElementById('listaGeral');
+  if (!dados.length) { lista.innerHTML='<div class="empty">Sem resultados.</div>'; return; }
+  
+  lista.innerHTML = dados.map((item, i) => `
+    <div class="list-item" id="gi-${item._idx}" onclick="focarGeral(${item._idx})">
+      <div class="list-num">${i+1}</div>
+      <div class="list-info">
+        <div class="addr">${item.endereco}</div>
+        <div class="bairro">
+          ${item.bairro} ${item.esquina ? ' • <small style="color:var(--accent3)">Esq. ' + item.esquina + '</small>' : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderGeralMarcadores(dados) {
+  marcadoresGeral.forEach(m => mapGeral.removeLayer(m));
+  marcadoresGeral = [];
+  const posicoesOcupadas = {};
+
+  dados.forEach((item, i) => {
+    let lat = item.lat; let lng = item.lng;
+    const chave = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    if (posicoesOcupadas[chave]) {
+      lat += (Math.random() - 0.5) * 0.00008; 
+      lng += (Math.random() - 0.5) * 0.00008;
+    }
+    posicoesOcupadas[chave] = true;
+
+    const m = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className:'', 
+        html:`<div style="background:var(--accent);width:22px;height:22px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:white;box-shadow:0 2px 5px rgba(0,0,0,0.3)">${i+1}</div>`
+      })
+    }).addTo(mapGeral);
+    
+    m.bindPopup(`<div class="popup-num">${i+1}</div><div class="popup-addr">${item.endereco}</div><div class="popup-bairro">📍 ${item.bairro}</div>`);
+    m.on('click', () => focarGeral(item._idx));
+    marcadoresGeral.push(m);
+  });
+
+  if (dados.length > 0) {
+    mapGeral.fitBounds(L.latLngBounds(dados.map(d => [d.lat, d.lng])), {padding: [40, 40]});
+  }
+}
+
+function focarGeral(idx) {
+  if (activeIdx !== null) {
+    const el = document.getElementById('gi-'+activeIdx);
+    if(el) el.classList.remove('active');
+  }
+  activeIdx = idx;
+  const el = document.getElementById('gi-'+idx);
+  if(el){el.classList.add('active');el.scrollIntoView({block:'nearest'});}
+  const item = todosEnderecos.find(d=>d._idx===idx);
+  const pos = todosEnderecos.filter(d=>d.lat).findIndex(d=>d._idx===idx);
+  if(item) mapGeral.setView([item.lat,item.lng],17,{animate:true});
+  if(pos>=0 && marcadoresGeral[pos]) marcadoresGeral[pos].openPopup();
+}
+
+function filtrarGeral() {
+  const q = document.getElementById('searchGeral').value.toLowerCase();
+  const btnAtivo = document.querySelector('.filter-btn.active');
+  const filtroBairro = btnAtivo ? btnAtivo.getAttribute('data-bairro') : '';
+  
+  const f = todosEnderecos.filter(d => {
+    const matchBusca = d.endereco.toLowerCase().includes(q);
+    const matchBairro = !filtroBairro || d.bairro === filtroBairro;
+    return matchBusca && matchBairro;
+  });
+
+  renderGeralLista(f);
+  renderGeralMarcadores(f);
+}
+
+function setFiltro(btn, bairro) {
+  document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+  filtrarGeral();
+}
+
+function popularFiltros(dados) {
+  const bairros = [...new Set(dados.map(d => d.bairro))].sort();
+  const bar = document.getElementById('filterBar');
+  bar.innerHTML = `<button class="filter-btn active" data-bairro="" onclick="setFiltro(this,'')">Tudo</button>` + 
+    bairros.map(x => {
+      const xEscapado = x.replace(/'/g, "\\'");
+      return `<button class="filter-btn" data-bairro="${x}" onclick="setFiltro(this,'${xEscapado}')">${x}</button>`;
+    }).join('');
+}
+
+function popularSelectBairro(dados) {
+  const bairros = [...new Set(dados.map(d=>d.bairro).filter(Boolean))].sort();
+  const sel = document.getElementById('bairroSelect');
+  sel.innerHTML = '<option value="">Todos os bairros</option>'
+    + bairros.map(b=>`<option value="${b}">${b}</option>`).join('');
+}
+
+function renderBairros() {
+  const filtro = document.getElementById('bairroSelect').value;
+  const scroll = document.getElementById('bairrosScroll');
+  scroll.innerHTML = '';
+  Object.values(mapsBairro).forEach(m => { try { m.remove(); } catch (e) {} });
+  mapsBairro = {};
+
+  let dados = filtro ? todosEnderecos.filter(d => d.bairro === filtro) : todosEnderecos;
+  if (!dados.length) { 
+    scroll.innerHTML = '<div class="empty">Nenhum endereço encontrado.</div>'; 
+    return; 
+  }
+
+  const grupos = {};
+  dados.forEach(d => {
+    const k = d.bairro || 'Sem bairro';
+    if (!grupos[k]) grupos[k] = [];
+    grupos[k].push(d);
+  });
+
+  Object.entries(grupos).sort(([a], [b]) => a.localeCompare(b, 'pt')).forEach(([bairro, items]) => {
+    const totalPags = Math.ceil(items.length / 10);
+    for (let p = 0; p < totalPags; p++) {
+      const bloco = items.slice(p * 10, (p + 1) * 10);
+      const grupoId = `g_${bairro.replace(/[^a-zA-Z0-9]/g, '_')}_${p}`;
+      const paginaLabel = totalPags > 1 ? ` — Pág. ${p + 1}/${totalPags}` : '';
+      const card = document.createElement('div');
+      card.className = 'grupo-card';
+      card.id = grupoId;
+      card.innerHTML = `
+        <div class="grupo-header">
+          <div>
+            <div class="grupo-title">📍 Bairro: ${bairro}${paginaLabel}</div>
+            <div class="grupo-meta">${bloco.length} endereço${bloco.length > 1 ? 's' : ''}</div>
+          </div>
+          <button class="btn-pdf" id="btn-${grupoId}" onclick="gerarPDF('${grupoId}','${bairro}',${p})">
+            ⬇ PDF desta página
+          </button>
+        </div>
+        <div class="grupo-map" id="map-${grupoId}"></div>
+        <div class="grupo-table">
+          <table class="endtable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Endereço</th>
+                <th>Referência</th>
+                <th>Bairro</th>
+              </tr>
+            </thead>
+            <tbody>${bloco.map((item, i) => `
+              <tr>
+                <td class="td-num">${p * 10 + i + 1}</td>
+                <td class="td-endereco">${item.endereco}</td>
+                <td style="font-size: 0.75rem; color: var(--muted2);">${item.esquina || '-'}</td>
+                <td class="td-bairro">${item.bairro}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+      scroll.appendChild(card);
+      setTimeout(() => {
+        const el = document.getElementById('map-' + grupoId);
+        if (!el || mapsBairro[grupoId]) return;
+        const m = L.map('map-' + grupoId, { zoomControl: true, scrollWheelZoom: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+        mapsBairro[grupoId] = m;
+        const pontosParaFocar = [];
+        bloco.forEach((item, i) => {
+          const pos = [item.lat, item.lng];
+          pontosParaFocar.push(pos);
+          L.marker(pos, { icon: pinIcon(p * 10 + i + 1) }).addTo(m);
+        });
+        if (pontosParaFocar.length > 1) { m.fitBounds(L.latLngBounds(pontosParaFocar), { padding: [40, 40], maxZoom: 18 }); }
+        else if (pontosParaFocar.length === 1) { m.setView(pontosParaFocar[0], 17); }
+      }, 200 + p * 50);
+    }
+  });
+}
+    
+async function gerarPDF(grupoId, bairro, pagina) {
+  const btn = document.getElementById('btn-' + grupoId);
+  if (!btn) return;
+  const textoOriginal = btn.textContent;
+  btn.textContent = '⏳ Renderizando...'; 
+  btn.disabled = true;
+
+  const dataPlanilha = document.getElementById('updateDate').textContent;
+  const dataImpressao = new Date().toLocaleDateString('pt-BR') + ' ' + 
+                     new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+  const mapLeaflet = mapsBairro[grupoId];
+  let mapImgData = "";
+
+  if (mapLeaflet) {
+    try {
+      const blocoEnderecos = todosEnderecos.filter(d => d.bairro === bairro).slice(pagina * 10, (pagina + 1) * 10);
+      const bounds = L.latLngBounds(blocoEnderecos.map(d => [d.lat, d.lng]));
+      const mapContainer = mapLeaflet.getContainer();
+      const cloneContainer = mapContainer.cloneNode(true);
+      cloneContainer.style.position = 'fixed'; cloneContainer.style.left = '-9999px'; cloneContainer.style.width = '1000px'; cloneContainer.style.height = '600px';
+      document.body.appendChild(cloneContainer);
+      const tempMap = L.map(cloneContainer, { zoomControl: false, attributionControl: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(tempMap);
+      blocoEnderecos.forEach((item, i) => { L.marker([item.lat, item.lng], { icon: pinIcon(pagina * 10 + i + 1) }).addTo(tempMap); });
+      tempMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: false });
+      await new Promise(r => setTimeout(r, 2000));
+      const canvas = await html2canvas(cloneContainer, { useCORS: true, scale: 2 });
+      mapImgData = canvas.toDataURL('image/jpeg', 0.95);
+      tempMap.remove(); document.body.removeChild(cloneContainer);
+    } catch (e) { console.error(e); }
+  }
+
+  const pag = pagina + 1;
+  const blocoEnderecosPag = todosEnderecos.filter(d => d.bairro === bairro).slice(pagina * 10, (pagina + 1) * 10);
+  const linhasHTML = blocoEnderecosPag.map((item, i) => `
+      <tr>
+        <td style="text-align:center; font-weight:700; color:#2563eb; padding:8px; border-bottom:1px solid #eee;">${pagina * 10 + i + 1}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee; font-weight:500;">${item.endereco}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee; font-size:9px;">${item.esquina || '-'}</td>
+        <td style="padding:8px; border-bottom:1px solid #eee;">${item.bairro}</td>
+      </tr>`).join('');
+
+  const htmlPDF = `
+      <div style="font-family:'Inter',Arial,sans-serif; padding:10mm; background:#fff; width:190mm;">
+        <div style="text-align:right; color:#64748b; font-size:9px;">
+            <span>Sincronização: </span><strong>${dataPlanilha}</strong> &nbsp;&nbsp;
+            <span>Emissão: </span>${dataImpressao}
+        </div>
+        <div style="border-bottom:2px solid #2563eb; padding-bottom:8px; margin-bottom:10px;">
+          <h1 style="font-size:16px; margin:0; color:#1e293b;">📍 Bairro: ${bairro} — Página ${pag}</h1>
+        </div>
+        <img src="${mapImgData}" style="width:100%; border:1px solid #d1d9e0; margin-bottom:15px; border-radius:8px;"/>
+        <table style="width:100%; border-collapse:collapse; font-size:10px;">
+            <thead>
+              <tr style="background:#f8f9fa;">
+                <th style="padding:8px; border-bottom:2px solid #d1d9e0; width:30px;">#</th>
+                <th style="padding:8px; border-bottom:2px solid #d1d9e0; text-align:left;">Endereço</th>
+                <th style="padding:8px; border-bottom:2px solid #d1d9e0; text-align:left;">Referência</th>
+                <th style="padding:8px; border-bottom:2px solid #d1d9e0; text-align:left;">Bairro</th>
+              </tr>
+            </thead>
+            <tbody>${linhasHTML}</tbody>
+          </table>
+      </div>`;
+
+  const element = document.createElement('div');
+  element.innerHTML = htmlPDF;
+  try {
+    await html2pdf().set({
+      margin: 5, filename: `Relatorio_Floresta_${bairro}_P${pag}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(element).save();
+  } finally {
+    btn.textContent = textoOriginal; btn.disabled = false;
+  }
+}
+    
+async function baixarTodosPDFs() {
+  const btns = document.querySelectorAll('.btn-pdf:not(:disabled)');
+  for (const btn of btns) { btn.click(); await new Promise(r=>setTimeout(r,2500)); }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabBtn = document.getElementById('tab-' + tab);
+  const panel = document.getElementById('panel-' + tab);
+  if (tabBtn && panel) { tabBtn.classList.add('active'); panel.classList.add('active'); }
+  const btnToggle = document.querySelector('.toggle-sidebar');
+  if (btnToggle) { btnToggle.style.setProperty('display', tab === 'geral' ? 'block' : 'none', 'important'); }
+  if (tab === 'bairros' && todosEnderecos.length > 0) { renderBairros(); }
+  if (tab === 'geral' && mapGeral) { setTimeout(() => { mapGeral.invalidateSize(); }, 300); }
+  window.scrollTo(0, 0);
+}
+    
+mapGeral = L.map('map-geral',{zoomControl:true}).setView([-23.61, -52.08], 14);
+darkTiles(mapGeral);
+carregarDados();
+</script>
+</body>
+</html>
