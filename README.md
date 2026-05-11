@@ -2,8 +2,9 @@
 
 Este projeto é uma ferramenta interativa para visualização e exportação de dados comerciais da cidade de Floresta, Paraná. Ele consome dados diretamente de uma planilha Google Sheets e permite a geração de relatórios personalizados em PDF com mapas integrados.
 
-## 🚀 Link do Projeto 
-<a href="https://julianasodata.github.io/mapa-comercial-floresta-pr/">Acesse o sistema vivo aqui</a> 
+## 🚀 Link do Projeto
+Para uma melhor experiência, acesse o sistema em uma nova aba: 
+<a href="https://julianasodata.github.io/mapa-comercial-floresta-pr/" target="_blank" rel="noopener noreferrer">Acessar Mapa Comercial Interativo</a>
 
 ## ✨ Funcionalidades
 - **Mapa Interativo:** Visualização de pontos comerciais utilizando Leaflet.js e OpenStreetMap.
@@ -22,8 +23,7 @@ Este projeto é uma ferramenta interativa para visualização e exportação de 
 2. Abra o arquivo `index.html` em qualquer navegador moderno.
 
 ---
-Desenvolvido por Juliana Santos
-<a href="www.linkedin.com/in/julianasodata" target="_blank">LinkedIn</a>
+Desenvolvido por **Juliana Santos** | <a href="www.linkedin.com/in/julianasodata" target="_blank" rel="noopener noreferrer">Conectar no LinkedIn</a>
 
 ## 📸 Demonstração
 ![Interface do Sistema](assets/Print_Comercio_Floresta.png)
